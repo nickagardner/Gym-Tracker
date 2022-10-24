@@ -75,44 +75,58 @@ def render_plot(plotly_cred_file, firebase_cred_file):
         ul_y[i] = data["ul_count"]
         aq_y[i] = data["aq_count"]
 
+    df = pd.DataFrame({'date': x, 'll_count': ll_y, 'ul_count': ul_y, 'aq_count': aq_y})
+
+    today_date = datetime.date.today()
+    today_begin = pd.Timestamp(tz=pytz.timezone('US/Eastern'), year=today_date.year,
+                               month=today_date.month, day=today_date.day)
+    tomorrow_date = today_date + datetime.timedelta(days=1)
+    tomorrow_begin = pd.Timestamp(tz=pytz.timezone('US/Eastern'), year=tomorrow_date.year,
+                                  month=tomorrow_date.month, day=tomorrow_date.day)
+
+    df_daily = df[(df['date'] >= today_begin) & (df['date'] <= tomorrow_begin)]
+
+    now = datetime.datetime.now()
+    monday = now - datetime.timedelta(days=2)
+    week_begin = pd.Timestamp(tz=pytz.timezone('US/Eastern'), year=monday.year,
+                              month=monday.month, day=monday.day)
+    next_monday = monday + datetime.timedelta(days=7)
+    week_end = pd.Timestamp(tz=pytz.timezone('US/Eastern'), year=next_monday.year,
+                            month=next_monday.month, day=next_monday.day)
+
+    df_weekly = df[(df['date'] >= week_begin) & (df['date'] <= week_end)]
+    df_weekly = df_weekly.groupby(pd.Grouper(key='date', freq='D')).mean().reset_index()
+
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=x, y=ll_y,
-                             mode='lines+markers',
-                             name='Lower Level'))
-    fig.add_trace(go.Scatter(x=x, y=ul_y,
-                             mode='lines+markers',
-                             name='Upper Level'))
-    fig.add_trace(go.Scatter(x=x, y=aq_y,
-                             mode='lines+markers',
-                             name='Aquatic Center'))
+    format_column_names = ["Lower Level", "Upper Level", "Aquatic Center"]
+    visibility = [False, True]
+    for df_idx, df in enumerate([df_weekly, df_daily]):
+        for col_idx, column in enumerate(["ll_count", "ul_count", "aq_count"]):
+            fig.add_trace(go.Scatter(x=df["date"], y=df[column],
+                                     mode='lines+markers',
+                                     name=format_column_names[col_idx],
+                                     visible=visibility[df_idx]))
 
-    # fig.update_layout(
-    #     updatemenus=[
-    #         dict(
-    #             buttons=list([
-    #                 dict(
-    #                     args=[{'x': [daily_df.x], 'y': [daily_df.y]}],
-    #                     label='Daily',
-    #                     method='restyle'
-    #                 ),
-    #                 dict(
-    #                     args=[{'x': [monthly_df.x], 'y': [monthly_df.y]}],
-    #                     label='Monthly',
-    #                     method='restyle'
-    #                 )
-    #             ]),
-    #             direction="down",
-    #             pad={"r": 10, "t": 10},
-    #             showactive=True,
-    #             x=0.1,
-    #             xanchor="left",
-    #             y=1.1,
-    #             yanchor="top"
-    #         ),
-    #     ]
-    # )
-    fig.update_layout(title="RIT Recreation Facility Occupancy", xaxis_title="Date",
+    fig.update_layout(
+        updatemenus=[go.layout.Updatemenu(
+            active=0,
+            buttons=list(
+                [dict(label='Daily',
+                      method='update',
+                      args=[{'visible': [False, False, False, True, True, True]},
+                            {'xaxis.range': [today_begin, tomorrow_begin]}]),
+                 dict(label='Weekly',
+                      method='update',
+                      args=[{'visible': [True, True, True, False, False, False]},
+                            {'xaxis.range': [monday, next_monday]}])
+                 ])
+        )
+        ]
+    )
+
+    fig.update_xaxes(range=[today_begin, tomorrow_begin])
+    fig.update_layout(title="RIT Recreation Facility Occupancy", xaxis_title="Datetime",
                       yaxis_title="Number of Occupants", legend_title="Facility Name")
 
     py.plot(fig, filename='RIT_gym_occupancy', auto_open=False)
@@ -124,4 +138,4 @@ def main(event_data, context):
     render_plot(PLOTLY_CREDENTIALS_FILE, FIREBASE_CREDENTIALS_FILE)
 
 
-# main("blah", "bleh")
+main("blah", "bleh")
