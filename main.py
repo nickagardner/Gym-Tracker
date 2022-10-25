@@ -56,7 +56,7 @@ def store_counts(counts, firebase_cred_file):
     """
     if not firebase_admin._apps:
         cred = credentials.Certificate(firebase_cred_file)
-        default_app = firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred)
 
     db = firestore.client()
     collection = db.collection('gym_data_entries')
@@ -84,7 +84,7 @@ def render_plot(plotly_cred_file, firebase_cred_file):
 
     if not firebase_admin._apps:
         cred = credentials.Certificate(firebase_cred_file)
-        default_app = firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred)
 
     db = firestore.client()
     collection = db.collection('gym_data_entries')
@@ -121,6 +121,7 @@ def render_plot(plotly_cred_file, firebase_cred_file):
     week_end = pd.Timestamp(tz=pytz.timezone('US/Eastern'), year=next_monday.year,
                             month=next_monday.month, day=next_monday.day)
 
+
     df_weekly = df[(df['date'] >= week_begin) & (df['date'] <= week_end)]
     df_weekly = df_weekly.set_index('date').resample('6h').mean().reset_index()
 
@@ -146,7 +147,7 @@ def render_plot(plotly_cred_file, firebase_cred_file):
                  dict(label='Weekly',
                       method='update',
                       args=[{'visible': [True, True, True, False, False, False]},
-                            {'xaxis.range': [monday, next_monday]}])
+                            {'xaxis.range': [week_begin, week_end]}])
                  ])
         )
         ]
@@ -156,7 +157,7 @@ def render_plot(plotly_cred_file, firebase_cred_file):
     fig.update_layout(title="RIT Recreation Facility Occupancy", xaxis_title="Datetime",
                       yaxis_title="Number of Occupants", legend_title="Facility Name")
 
-    py.plot(fig, filename='RIT_gym_occupancy_test', auto_open=False)
+    py.plot(fig, filename='RIT_gym_occupancy', auto_open=False)
 
 
 def main(event_data, context):
