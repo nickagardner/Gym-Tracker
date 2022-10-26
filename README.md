@@ -1,8 +1,8 @@
 # Gym Tracker
 
-Simple script to scrape data from RIT's gym website, store that data in a Firebase NoSQL database, then render it online with Plotly. This script is passed in to Google Cloud Run along with credentials files (not included here) for both Firebase and Plotly Chart Studio. Following a pub/sub trigger, this file scrapes the website, stores the result in the database, and renders a new world-visible plot with Plotly. 
+Simple script to scrape data from RIT's gym website and store that data in a Firebase NoSQL database. This script is passed in to Google Cloud Run along with credentials files (not included here) for Firebase. Following a pub/sub trigger, this file scrapes the website and stores the result in the database. This database is used by my related repository, https://github.com/nickagardner/Gym-Tracker-Renderer, to render a world-visible plot showing current and historical gym occupancy.
 
-Link to plot: https://plotly.com/~nickgardner7777/20/
+Link to plot (on my website): https://www.nickgardner.us/gym_tracker.html
 
 If you are interested in implementing something similar, here is a brief explanation of the credentials files:
 ### Firebase
@@ -21,16 +21,7 @@ After creating a Firestore database, go to project, then navigate to your projec
   "client_x509_cert_url": "client_auth_url"
 }
 ```
-### Plotly Chart Studio
-After creating a Plotly account, navigate to https://chart-studio.plotly.com/settings/api#/ and click *Generate Key*. In order to pass my information to Google Cloud Run, I stored this information in a json file like the following (again with sensitive information replaced):
-```
-{
-  "username": "fake_username_1337",
-  "api_key": "FAKE_API_KEY_1234"
-}
-```
 
 # TODO
 
-- Massively clean up plotting to allow for different modes of visibility (daily, weekly, monthly, yearly)
-- Incorporate simple machine learning element to predict future occupancy based on historical data and current trends
+- Incorporate simple machine learning element to predict future occupancy based on historical data and current trends. Waiting for a sufficiently large dataset for this.
