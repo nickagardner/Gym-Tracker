@@ -23,10 +23,10 @@ def store_counts(url, firebase_credentials_file, timezone):
         firebase_admin.initialize_app(cred)
 
     db = firestore.client()
-    collection = db.collection('gym_data_entries')
+    collection = db.collection('gym_data')
 
     cur_time = datetime.datetime.now()
-    format_time = str(pd.Timestamp(cur_time).tz_localize('UTC').astimezone(pytz.timezone(timezone)))
+    format_time = pd.Timestamp(cur_time).tz_localize('UTC').astimezone(pytz.timezone(timezone))
 
     dates = collection.document('date').get().to_dict()['entries']
     dates.append(format_time)
