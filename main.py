@@ -22,4 +22,4 @@ def main(event_data, context):
     :param context: Required parameter for Google Cloud Run
     :return: None
     """
-    store_counts(RIT_GYM_URL, FIREBASE_CREDENTIALS_FILE)
+    store_counts(RIT_GYM_URL, FIREBASE_CREDENTIALS_FILE, TIMEZONE)

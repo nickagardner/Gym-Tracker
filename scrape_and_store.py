@@ -1,6 +1,7 @@
 import requests
 import datetime
 import pandas as pd
+import pytz
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -8,7 +9,13 @@ from firebase_admin import credentials, firestore
 from bs4 import BeautifulSoup
 
 
-def store_counts(url, firebase_credentials_file):
+def store_counts(url, firebase_credentials_file, timezone):
+    """
+    Triggers a scrape and stores the resulting counts in a firebase db
+    :param url: url to scrape
+    :param firebase_credentials_file: credentials file to access db
+    :return: None
+    """
     counts = get_counts(url)
 
     if not firebase_admin._apps:
@@ -19,11 +26,30 @@ def store_counts(url, firebase_credentials_file):
     collection = db.collection('gym_data_entries')
 
     cur_time = datetime.datetime.now()
-    format_time = str(pd.Timestamp(cur_time))
+    format_time = str(pd.Timestamp(cur_time).tz_localize('UTC').astimezone(pytz.timezone(timezone)))
 
-    collection.document(format_time).set({
-        'll_count': counts[0], 'ul_count': counts[1],
-        'aq_count': counts[2],
+    dates = collection.document('date').get().to_dict()['entries']
+    dates.append(format_time)
+    collection.document('date').update({
+        'entries': dates
+    })
+
+    lower_level = collection.document('lower_level').get().to_dict()['entries']
+    lower_level.append(counts[0])
+    collection.document('lower_level').update({
+        'entries': lower_level
+    })
+
+    upper_level = collection.document('upper_level').get().to_dict()['entries']
+    upper_level.append(counts[1])
+    collection.document('upper_level').update({
+        'entries': upper_level
+    })
+
+    aquatic_center = collection.document('aquatic_center').get().to_dict()['entries']
+    aquatic_center.append(counts[2])
+    collection.document('aquatic_center').update({
+        'entries': aquatic_center
     })
 
 
