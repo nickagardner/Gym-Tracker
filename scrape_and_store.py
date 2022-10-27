@@ -4,23 +4,21 @@ import pandas as pd
 import pytz
 
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 
 from bs4 import BeautifulSoup
 
 
-def store_counts(url, firebase_credentials_file, timezone):
+def store_counts(url, timezone):
     """
     Triggers a scrape and stores the resulting counts in a firebase db
     :param url: url to scrape
-    :param firebase_credentials_file: credentials file to access db
     :return: None
     """
     counts = get_counts(url)
 
     if not firebase_admin._apps:
-        cred = credentials.Certificate(firebase_credentials_file)
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app()
 
     db = firestore.client()
     collection = db.collection('gym_data')
