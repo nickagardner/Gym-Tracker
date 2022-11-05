@@ -1,9 +1,10 @@
 # Gym Tracker
 
-System to scrape data from RIT's gym website and store that data in a Firebase NoSQL database. This script is passed in to Google Cloud Run along with credentials files (not included here) for Firebase. Following a pub/sub trigger, this file scrapes the website and stores the result in the database. This database is used by my related repository, https://github.com/nickagardner/Gym-Tracker-Renderer, to render a world-visible plot showing current and historical gym occupancy.
+System to scrape data from RIT's gym website and store that data in a Firebase NoSQL database. This script is passed to Google Cloud Run by a Google Cloud Repository mirroring this repository. Following a pub/sub trigger, this file scrapes the website and stores the result in the database. It also performs future prediction using Facebook AI's Prophet (using the historical data collected by this app). Once the historical data and future prediction is stored in the database, my related repository, https://github.com/nickagardner/Gym-Tracker-Renderer, renders a world-visible plot showing current and historical gym occupancy, as well as future prediction up to two weeks in the future.
 
-[![scraper_screenshot](https://user-images.githubusercontent.com/12617237/198174338-3f5d4ce9-1c23-40d5-a2bc-0656ff8de8b4.png)](https://www.nickgardner.us/gym_tracker.html)
+[![weekly_scraper_screenshot](https://user-images.githubusercontent.com/12617237/200126249-5e125ac1-028f-4360-ba31-cff9d348d956.png)](https://www.nickgardner.us/gym_tracker.html)
 
 # TODO
 
 - Add capability to expand historical data tracking past the size of one document (which is approximately 850 days worth)
+
