@@ -6,4 +6,4 @@ System to scrape data from RIT's gym website and store that data in a Firebase N
 
 # TODO
 
-- Incorporate simple machine learning element to predict future occupancy based on historical data and current trends. Waiting for a sufficiently large dataset for this.
+- Add capability to expand historical data tracking past the size of one document (which is approximately 850 days worth)
