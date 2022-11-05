@@ -6,7 +6,7 @@ store that data in a Google Firestore NoSQL database, then render the results wi
 This produces a figure that is available online and is embedded in my website.
 """
 
-from scrape_and_store import store_counts
+from scrape_and_store import store_counts, get_counts
 
 # Constants
 RIT_GYM_URL = "https://recreation.rit.edu/facilityoccupancy"
@@ -20,4 +20,5 @@ def main(event_data, context):
     :param context: Required parameter for Google Cloud Run
     :return: None
     """
-    store_counts(RIT_GYM_URL, TIMEZONE)
+    counts = get_counts(RIT_GYM_URL)
+    store_counts(counts, TIMEZONE)

@@ -3,20 +3,36 @@ import datetime
 import pandas as pd
 import pytz
 
+from bs4 import BeautifulSoup
+
 import firebase_admin
 from firebase_admin import firestore
 
-from bs4 import BeautifulSoup
+from prophet import Prophet
 
 
-def store_counts(url, timezone):
+def get_counts(url):
+    """
+    Simple scraping function. Returns the current occupancy of the three areas of the gym.
+    :param url: Website to scrape (RIT gym website)
+    :return: list containing [ll_count, ul_count, aq_count]
+    """
+    req = requests.get(url)
+    page = str(req.content, "windows-1250")
+    soup = BeautifulSoup(page, 'html.parser')
+
+    count_tags = soup.find_all("p", class_="occupancy-count")
+    counts = [int(count_tag.getText()) for count_tag in count_tags[::2]]
+
+    return counts
+
+
+def store_counts(counts, timezone):
     """
     Triggers a scrape and stores the resulting counts in a firebase db
-    :param url: url to scrape
+    :param counts: list containing latest scraped occupancy values
     :return: None
     """
-    counts = get_counts(url)
-
     if not firebase_admin._apps:
         firebase_admin.initialize_app()
 
@@ -50,18 +66,55 @@ def store_counts(url, timezone):
         'entries': aquatic_center
     })
 
+    df = pd.DataFrame({'date': dates, 'll_count': lower_level, 'ul_count': upper_level, 'aq_count': aquatic_center})
 
-def get_counts(url):
+    predict_df = predict(df, timezone)
+
+    collection.document('prediction').set({
+        'date': predict_df["date"].values.tolist(),
+        'lower_level': predict_df["ll_count"].values.tolist(),
+        'upper_level': predict_df["ul_count"].values.tolist(),
+        'aquatic_center': predict_df["aq_count"].values.tolist(),
+    })
+
+
+def predict(df, timezone, now=None):
     """
-    Simple scraping function. Returns the current occupancy of the three areas of the gym.
-    :param url: Website to scrape (RIT gym website)
-    :return: list containing [ll_count, ul_count, aq_count]
+    Predict future occupancy based on historical values
+    :param df: Historical data df
+    :param timezone: Timezone to localize results in
+    :param now: datetime.datetime.now() (localized)
+    :return: Future prediction df
     """
-    req = requests.get(url)
-    page = str(req.content, "windows-1250")
-    soup = BeautifulSoup(page, 'html.parser')
+    if now is None:
+        now = datetime.datetime.now()
+        tz = pytz.timezone('UTC')
+        now = tz.localize(now).astimezone(pytz.timezone(timezone))
 
-    count_tags = soup.find_all("p", class_="occupancy-count")
-    counts = [int(count_tag.getText()) for count_tag in count_tags[::2]]
+    pred_df_input = pd.melt(df, id_vars='date', value_vars=['ll_count', 'ul_count', 'aq_count'])
+    pred_df_input.columns = ['ds', 'facility', 'y']
+    pred_df_input['ds'] = pred_df_input['ds'].dt.tz_localize(None)
+    groups_by_facility = pred_df_input.groupby('facility')
 
-    return counts
+    monday = now - datetime.timedelta(days=now.weekday())
+    two_weeks = monday + datetime.timedelta(days=14)
+    time_to_predict = two_weeks - now
+    minutes_to_predict = divmod(time_to_predict.days * 86400 + time_to_predict.seconds, 60)[0]
+    periods = (minutes_to_predict - (now.hour * 60)) / 30
+
+    pred_dfs = []
+    for facility in ['ll_count', 'ul_count', 'aq_count']:
+        group = groups_by_facility.get_group(facility)
+
+        model = Prophet(changepoint_prior_scale=0.05, seasonality_prior_scale=10)
+        model.fit(group)
+        future = model.make_future_dataframe(periods=int(periods), freq='30min')
+        forecast = model.predict(future)[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+        forecast['facility'] = group['facility'].iloc[0]
+
+        pred_dfs.append(forecast[['ds', 'facility', 'yhat', 'yhat_upper', 'yhat_lower']])
+    pred_df = pd.concat(pred_dfs)
+    pred_df = pred_df.rename(columns={'ds': 'date'})
+    pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
+
+    return pred_df
