@@ -72,9 +72,8 @@ def store_counts(counts, timezone):
 
     collection.document('prediction').set({
         'date': predict_df["date"].values.tolist(),
-        'lower_level': predict_df["ll_count"].values.tolist(),
-        'upper_level': predict_df["ul_count"].values.tolist(),
-        'aquatic_center': predict_df["aq_count"].values.tolist(),
+        'facility': predict_df["facility"].values.tolist(),
+        'value': predict_df["yhat"].values.tolist(),
     })
 
 
