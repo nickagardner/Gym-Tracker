@@ -67,6 +67,7 @@ def store_counts(counts, timezone):
     })
 
     df = pd.DataFrame({'date': dates, 'll_count': lower_level, 'ul_count': upper_level, 'aq_count': aquatic_center})
+    df['date'] = df['date'].dt.tz_convert(timezone)
 
     predict_df = predict(df, timezone)
 
