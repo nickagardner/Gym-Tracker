@@ -109,7 +109,7 @@ def predict(df, timezone, now=None):
 
         model = Prophet(changepoint_prior_scale=0.05, seasonality_prior_scale=10)
         model.fit(group)
-        future = model.make_future_dataframe(periods=int(periods), freq='30min')
+        future = model.make_future_dataframe(periods=int(periods), freq='30min', include_history=False)
         forecast = model.predict(future)[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
         forecast['facility'] = group['facility'].iloc[0]
 
@@ -117,6 +117,5 @@ def predict(df, timezone, now=None):
     pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
-    pred_df = pred_df[pred_df['date'] > df.iloc[-1]['date']]
 
     return pred_df
