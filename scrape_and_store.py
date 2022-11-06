@@ -73,7 +73,7 @@ def store_counts(counts, timezone):
     predict_df = predict(df, timezone)
 
     collection.document('prediction').set({
-        'date': predict_df["date"].values.tolist(),
+        'date': pd.to_datetime(predict_df["date"].values).tolist(),
         'facility': predict_df["facility"].values.tolist(),
         'value': predict_df["yhat"].values.tolist(),
     })
@@ -92,7 +92,6 @@ def predict(df, timezone, now=None):
         tz = pytz.timezone('UTC')
         now = tz.localize(now).astimezone(pytz.timezone(timezone))
 
-    print(df)
     pred_df_input = pd.melt(df, id_vars='date', value_vars=['ll_count', 'ul_count', 'aq_count'])
     pred_df_input.columns = ['ds', 'facility', 'y']
     pred_df_input['ds'] = pred_df_input['ds'].dt.tz_localize(None)
@@ -117,7 +116,6 @@ def predict(df, timezone, now=None):
         pred_dfs.append(forecast[['ds', 'facility', 'yhat', 'yhat_upper', 'yhat_lower']])
     pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
-    print(pred_df)
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
 
     return pred_df
