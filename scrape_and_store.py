@@ -117,5 +117,6 @@ def predict(df, timezone, now=None):
     pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
+    pred_df = pred_df[pred_df['date'] > df.iloc[-1]['date']]
 
     return pred_df
