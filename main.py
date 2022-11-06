@@ -1,9 +1,6 @@
 """
 File: main.py
 Author: Nick Gardner <nag6650@rit.edu>
-Script run by Google Cloud Run to scrape RIT's recreation website for gym data,
-store that data in a Google Firestore NoSQL database, then render the results with plotly.
-This produces a figure that is available online and is embedded in my website.
 """
 
 from scrape_and_store import store_counts, get_counts
