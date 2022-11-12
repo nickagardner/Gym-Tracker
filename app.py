@@ -1,3 +1,14 @@
+"""
+File: app.py
+Author: Nicholas Gardner <nag6650@rit.edu>
+
+Primary file for displaying historical and future gym occupancy. Entry point for Heroku.
+
+Using Plotly Dash, a flask app is created and hosted on Heroku.
+This interactive app allows the user to view historical and future gym occupancy
+for different days and scales.
+"""
+
 import pytz
 import datetime
 import pandas as pd
@@ -5,14 +16,14 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output
 
-from plot_utilities import query_db, get_daily, get_weekly
+from plot_utils import query_db, get_daily, get_weekly
 from constants import TIMEZONE, FORMAT_PRED_NAMES, FORMAT_VALUE_NAMES, VALUE_COLORS, PRED_COLORS
 
 today = datetime.datetime.now()
 tz = pytz.timezone('UTC')
 today = tz.localize(today).astimezone(pytz.timezone(TIMEZONE))
 
-df, pred_df = query_db(TIMEZONE)
+df, pred_df = query_db()
 
 app = Dash(__name__)
 
@@ -59,7 +70,7 @@ def update_graph(view, now):
     if now.date() == today.date():
         now = today
 
-    df_subset, pred_df_subset, begin, end = funcs[view_idx](df, pred_df, TIMEZONE, now)
+    df_subset, pred_df_subset, begin, end = funcs[view_idx](df, pred_df, now)
     for col_idx, column in enumerate(df_subset.columns[1:]):
         fig.add_trace(go.Scatter(x=df_subset["date"], y=df_subset[column],
                                  mode='lines+markers',

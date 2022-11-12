@@ -1,3 +1,12 @@
+"""
+File: plot_utils.py
+Author: Nicholas Gardner <nag6650@rit.edu>
+
+Utility functions for Heroku Plotly Dash Flask app plotting gym occpancy.
+Contains functions for querying data from the DB, as well as
+returning dataframes in the right time scale based on the user's request.
+"""
+
 import json
 import os
 import pandas as pd
@@ -7,10 +16,10 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from constants import FORMAT_VALUE_NAMES, FACILITY_COUNT_NAMES
+from constants import FORMAT_VALUE_NAMES, FACILITY_COUNT_NAMES, TIMEZONE
 
 
-def query_db(timezone):
+def query_db():
     """
     Query firebase db for gym occupancy information
     Returns: dataframe containing occupancy information
@@ -32,18 +41,18 @@ def query_db(timezone):
 
     df = pd.DataFrame({'date': x, FACILITY_COUNT_NAMES[0]: columns[0], FACILITY_COUNT_NAMES[1]: columns[1],
                        FACILITY_COUNT_NAMES[2]: columns[2]})
-    df['date'] = df['date'].dt.tz_convert(timezone)
+    df['date'] = df['date'].dt.tz_convert(TIMEZONE)
 
     prediction = collection.document('prediction').get().to_dict()
     pred_df = pd.DataFrame({'date': prediction['date'], FACILITY_COUNT_NAMES[0]: prediction[FACILITY_COUNT_NAMES[0]],
                             FACILITY_COUNT_NAMES[1]: prediction[FACILITY_COUNT_NAMES[1]],
                             FACILITY_COUNT_NAMES[2]: prediction[FACILITY_COUNT_NAMES[2]]})
-    pred_df['date'] = pred_df['date'].dt.tz_convert(timezone)
+    pred_df['date'] = pred_df['date'].dt.tz_convert(TIMEZONE)
 
     return df, pred_df
 
 
-def get_daily(df, pred_df, timezone, now=None):
+def get_daily(df, pred_df, now=None):
     """
     Get daily focused dataframe
     Args:
@@ -57,12 +66,12 @@ def get_daily(df, pred_df, timezone, now=None):
     if now is None:
         now = datetime.datetime.now()
         tz = pytz.timezone('UTC')
-        now = tz.localize(now).astimezone(pytz.timezone(timezone))
-    today_begin = pd.Timestamp(tz=pytz.timezone(timezone), year=now.year,
+        now = tz.localize(now).astimezone(pytz.timezone(TIMEZONE))
+    today_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=now.year,
                                month=now.month, day=now.day)
 
     tomorrow_date = now + datetime.timedelta(days=1, hours=1, minutes=1)
-    tomorrow_begin = pd.Timestamp(tz=pytz.timezone(timezone), year=tomorrow_date.year,
+    tomorrow_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=tomorrow_date.year,
                                   month=tomorrow_date.month, day=tomorrow_date.day, hour=0, minute=5)
 
     df_daily = df[(df['date'] >= today_begin) & (df['date'] <= tomorrow_begin)]
@@ -71,7 +80,7 @@ def get_daily(df, pred_df, timezone, now=None):
     return df_daily, pred_df_daily, today_begin, tomorrow_begin
 
 
-def get_weekly(df, pred_df, timezone, now=None):
+def get_weekly(df, pred_df, now=None):
     """
     Get weekly averaged dataframe
     Args:
@@ -84,13 +93,13 @@ def get_weekly(df, pred_df, timezone, now=None):
     if now is None:
         now = datetime.datetime.now()
         tz = pytz.timezone('UTC')
-        now = tz.localize(now).astimezone(pytz.timezone(timezone))
+        now = tz.localize(now).astimezone(pytz.timezone(TIMEZONE))
 
     monday = now - datetime.timedelta(days=now.weekday())
-    week_begin = pd.Timestamp(tz=pytz.timezone(timezone), year=monday.year,
+    week_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=monday.year,
                               month=monday.month, day=monday.day)
     next_monday = monday + datetime.timedelta(days=7, hours=1, minutes=1)
-    week_end = pd.Timestamp(tz=pytz.timezone(timezone), year=next_monday.year,
+    week_end = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=next_monday.year,
                             month=next_monday.month, day=next_monday.day, hour=0, minute=5)
     df_weekly = df[(df['date'] >= week_begin) & (df['date'] <= week_end)]
     pred_df_weekly = pred_df[(pred_df['date'] >= week_begin) & (pred_df['date'] <= week_end)]

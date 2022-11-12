@@ -1,3 +1,12 @@
+"""
+File: scrape_and_store.py
+Author: Nicholas Gardner <nag6650@rit.edu>
+
+Contains functions for scraping occupancy,
+creating predictions on future occupancy,
+and storing counts and predictions in a Firestore DB.
+"""
+
 import requests
 import datetime
 import pandas as pd
