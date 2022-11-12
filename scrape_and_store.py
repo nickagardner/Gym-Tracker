@@ -10,14 +10,15 @@ from firebase_admin import firestore
 
 from prophet import Prophet
 
+from constants import TIMEZONE, RIT_GYM_URL, FORMAT_VALUE_NAMES, FACILITY_COUNT_NAMES
 
-def get_counts(url):
+
+def get_counts():
     """
     Simple scraping function. Returns the current occupancy of the three areas of the gym.
-    :param url: Website to scrape (RIT gym website)
     :return: list containing [ll_count, ul_count, aq_count]
     """
-    req = requests.get(url)
+    req = requests.get(RIT_GYM_URL)
     page = str(req.content, "windows-1250")
     soup = BeautifulSoup(page, 'html.parser')
 
@@ -27,7 +28,7 @@ def get_counts(url):
     return counts
 
 
-def store_counts(counts, timezone):
+def store_counts(counts):
     """
     Triggers a scrape and stores the resulting counts in a firebase db
     :param counts: list containing latest scraped occupancy values
@@ -40,7 +41,7 @@ def store_counts(counts, timezone):
     collection = db.collection('gym_data')
 
     cur_time = datetime.datetime.now()
-    format_time = pd.Timestamp(cur_time).tz_localize('UTC').astimezone(pytz.timezone(timezone))
+    format_time = pd.Timestamp(cur_time).tz_localize('UTC').astimezone(pytz.timezone(TIMEZONE))
 
     dates = collection.document('date').get().to_dict()['entries']
     dates.append(format_time)
@@ -48,52 +49,46 @@ def store_counts(counts, timezone):
         'entries': dates
     })
 
-    lower_level = collection.document('lower_level').get().to_dict()['entries']
-    lower_level.append(counts[0])
-    collection.document('lower_level').update({
-        'entries': lower_level
-    })
+    facility_counts = []
+    for facility in FORMAT_VALUE_NAMES:
+        facility = "_".join(facility.lower().split(" "))
 
-    upper_level = collection.document('upper_level').get().to_dict()['entries']
-    upper_level.append(counts[1])
-    collection.document('upper_level').update({
-        'entries': upper_level
-    })
+        facility_count = collection.document(facility).get().to_dict()['entries']
+        facility_count.append(counts[0])
+        collection.document(facility).update({
+            'entries': facility_count
+        })
 
-    aquatic_center = collection.document('aquatic_center').get().to_dict()['entries']
-    aquatic_center.append(counts[2])
-    collection.document('aquatic_center').update({
-        'entries': aquatic_center
-    })
+        facility_counts.append(facility_count)
 
-    df = pd.DataFrame({'date': dates, 'll_count': lower_level, 'ul_count': upper_level, 'aq_count': aquatic_center})
+    df = pd.DataFrame({'date': dates, FACILITY_COUNT_NAMES[0]: facility_counts[0],
+                       FACILITY_COUNT_NAMES[1]: facility_counts[1], FACILITY_COUNT_NAMES[2]: facility_counts[2]})
     df['date'] = pd.to_datetime(df['date'], utc=True)
-    df['date'] = df['date'].dt.tz_convert(timezone)
+    df['date'] = df['date'].dt.tz_convert(TIMEZONE)
 
-    predict_df = predict(df, timezone)
+    predict_df = predict(df, TIMEZONE)
 
     collection.document('prediction').set({
         'date': pd.to_datetime(predict_df["date"].values).tolist(),
-        'll_count': predict_df["ll_count"].values.tolist(),
-        'ul_count': predict_df["ul_count"].values.tolist(),
-        'aq_count': predict_df["aq_count"].values.tolist(),
+        FACILITY_COUNT_NAMES[0]: predict_df[FACILITY_COUNT_NAMES[0]].values.tolist(),
+        FACILITY_COUNT_NAMES[1]: predict_df[FACILITY_COUNT_NAMES[1]].values.tolist(),
+        FACILITY_COUNT_NAMES[2]: predict_df[FACILITY_COUNT_NAMES[2]].values.tolist(),
     })
 
 
-def predict(df, timezone, now=None):
+def predict(df, now=None):
     """
     Predict future occupancy based on historical values
     :param df: Historical data df
-    :param timezone: Timezone to localize results in
     :param now: datetime.datetime.now() (localized)
     :return: Future prediction df
     """
     if now is None:
         now = datetime.datetime.now()
         tz = pytz.timezone('UTC')
-        now = tz.localize(now).astimezone(pytz.timezone(timezone))
+        now = tz.localize(now).astimezone(pytz.timezone(TIMEZONE))
 
-    pred_df_input = pd.melt(df, id_vars='date', value_vars=['ll_count', 'ul_count', 'aq_count'])
+    pred_df_input = pd.melt(df, id_vars='date', value_vars=FACILITY_COUNT_NAMES)
     pred_df_input.columns = ['ds', 'facility', 'y']
     pred_df_input['ds'] = pred_df_input['ds'].dt.tz_localize(None)
     groups_by_facility = pred_df_input.groupby('facility')
@@ -105,7 +100,7 @@ def predict(df, timezone, now=None):
     periods = (minutes_to_predict - (now.hour * 60)) / 30
 
     pred_dfs = []
-    for idx, facility in enumerate(['ll_count', 'ul_count', 'aq_count']):
+    for idx, facility in enumerate(FACILITY_COUNT_NAMES):
         group = groups_by_facility.get_group(facility)
 
         model = Prophet(changepoint_prior_scale=0.05, seasonality_prior_scale=10)
@@ -120,6 +115,17 @@ def predict(df, timezone, now=None):
 
     pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
-    pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
+    pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(TIMEZONE)
 
     return pred_df
+
+
+def main(event_data, context):
+    """
+    Main function wrapper (required by Google Cloud Run)
+    :param event_data: Required parameter for Google Cloud Run
+    :param context: Required parameter for Google Cloud Run
+    :return: None
+    """
+    counts = get_counts()
+    store_counts(counts)
