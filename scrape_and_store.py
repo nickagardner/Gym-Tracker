@@ -99,7 +99,7 @@ def predict(df, now=None):
     minutes_to_predict = divmod(time_to_predict.days * 86400 + time_to_predict.seconds, 60)[0]
     periods = (minutes_to_predict - (now.hour * 60)) / 30
 
-    pred_dfs = []
+    pred_df = pd.DataFrame()
     for idx, facility in enumerate(FACILITY_COUNT_NAMES):
         group = groups_by_facility.get_group(facility)
 
@@ -110,10 +110,9 @@ def predict(df, now=None):
         forecast = forecast.rename(columns={'yhat': facility})
 
         if idx == 0:
-            pred_dfs.append(forecast[['ds']])
-        pred_dfs.append(forecast[[facility]])
+            pred_df['ds'] = forecast['ds']
+        pred_df[facility] = forecast[facility]
 
-    pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(TIMEZONE)
 
