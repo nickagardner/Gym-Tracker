@@ -117,14 +117,3 @@ def predict(df, now=None):
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(TIMEZONE)
 
     return pred_df
-
-
-def main(event_data, context):
-    """
-    Main function wrapper (required by Google Cloud Run)
-    :param event_data: Required parameter for Google Cloud Run
-    :param context: Required parameter for Google Cloud Run
-    :return: None
-    """
-    counts = get_counts()
-    store_counts(counts)
