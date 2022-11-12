@@ -74,8 +74,9 @@ def store_counts(counts, timezone):
 
     collection.document('prediction').set({
         'date': pd.to_datetime(predict_df["date"].values).tolist(),
-        'facility': predict_df["facility"].values.tolist(),
-        'value': predict_df["yhat"].values.tolist(),
+        'll_count': predict_df["ll_count"].values.tolist(),
+        'ul_count': predict_df["ul_count"].values.tolist(),
+        'aq_count': predict_df["aq_count"].values.tolist(),
     })
 
 
@@ -104,16 +105,19 @@ def predict(df, timezone, now=None):
     periods = (minutes_to_predict - (now.hour * 60)) / 30
 
     pred_dfs = []
-    for facility in ['ll_count', 'ul_count', 'aq_count']:
+    for idx, facility in enumerate(['ll_count', 'ul_count', 'aq_count']):
         group = groups_by_facility.get_group(facility)
 
         model = Prophet(changepoint_prior_scale=0.05, seasonality_prior_scale=10)
         model.fit(group)
         future = model.make_future_dataframe(periods=int(periods), freq='30min', include_history=False)
         forecast = model.predict(future)[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
-        forecast['facility'] = group['facility'].iloc[0]
+        forecast = forecast.rename(columns={'yhat': facility})
 
-        pred_dfs.append(forecast[['ds', 'facility', 'yhat', 'yhat_upper', 'yhat_lower']])
+        if idx == 0:
+            pred_dfs.append(forecast[['ds']])
+        pred_dfs.append(forecast[[facility]])
+
     pred_df = pd.concat(pred_dfs)
     pred_df = pred_df.rename(columns={'ds': 'date'})
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(timezone)
