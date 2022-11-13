@@ -7,5 +7,4 @@ System to scrape data from RIT's gym website and store that data in a Firebase N
 # TODO
 
 - Add capability to expand historical data tracking past the size of one document (which is approximately 850 days worth)
-- Handle transition with DST
 
