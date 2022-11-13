@@ -76,11 +76,11 @@ def update_graph(view, now):
 
     if len(pred_df_subset) > 0:
         for col_idx, column in enumerate(df_subset.columns[1:]):
-            try:
+            if len(df_subset) > 0:
                 last_val = df_subset.tail(1).reset_index(drop=True)
                 pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.iloc[0].date].reset_index(drop=True)
                 final_df = pd.concat([last_val, pred_df_temp])
-            except Exception as e:
+            else:
                 # no historical datapoint to connect to
                 final_df = pred_df_subset
             fig.add_trace(go.Scatter(x=final_df["date"], y=final_df[column],
