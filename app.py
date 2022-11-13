@@ -81,9 +81,9 @@ def update_graph(view, now):
         for col_idx, column in enumerate(df_subset.columns[1:]):
             try:
                 last_val = df_subset.tail(1).reset_index(drop=True)
-                print(last_val)
+                print(last_val.iloc[0].date)
                 print(pred_df_subset)
-                pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.date].reset_index(drop=True)
+                pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.iloc[0].date].reset_index(drop=True)
                 final_df = pd.concat([last_val, pred_df_temp])
             except Exception as e:
                 # no historical datapoint to connect to
