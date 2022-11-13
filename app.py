@@ -85,8 +85,9 @@ def update_graph(view, now):
                 pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.date]
                 final_df = pd.concat([last_val, pred_df_temp])
                 print(final_df)
-            except:
+            except Exception as e:
                 # no historical datapoint to connect to
+                print(e)
                 final_df = pred_df_subset
             fig.add_trace(go.Scatter(x=final_df["date"], y=final_df[column],
                                      mode='lines+markers',
