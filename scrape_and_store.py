@@ -75,7 +75,7 @@ def store_counts(counts):
     df['date'] = pd.to_datetime(df['date'], utc=True)
     df['date'] = df['date'].dt.tz_convert(TIMEZONE)
 
-    predict_df = predict(df, TIMEZONE)
+    predict_df = predict(df)
 
     collection.document('prediction').set({
         'date': pd.to_datetime(predict_df["date"].values).tolist(),
