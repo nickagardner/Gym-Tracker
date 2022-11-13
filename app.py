@@ -50,13 +50,10 @@ yaxis_titles = ["Number of Occupants", "12-Hour Average Number of Occupants"]
 )
 def update_graph(view, now):
     """
-    Updates graph based on input from user
-    Args:
-        view: Which view to use: daily or weekly
-        now: What day to focus on (from calendar widget)
-
-    Returns:
-        Figure to render
+    Updates figure based on user input
+    :param view: What type of scale to view the data in {weekly or daily}
+    :param now: Current date (specified by calendar)
+    :return: figure to render
     """
     fig = go.Figure()
     view_idx = 0 if view == "Daily" else 1

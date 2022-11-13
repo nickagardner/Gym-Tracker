@@ -21,8 +21,8 @@ from constants import FORMAT_VALUE_NAMES, FACILITY_COUNT_NAMES, TIMEZONE
 
 def query_db():
     """
-    Query firebase db for gym occupancy information
-    Returns: dataframe containing occupancy information
+    Queries Firestore DB for historical and prediction data
+    :return: historical data, prediction data
     """
     if not firebase_admin._apps:
         cred = credentials.Certificate(json.loads(os.environ['FIREBASE_CREDENTIALS']))
@@ -52,30 +52,36 @@ def query_db():
     return df, pred_df
 
 
-def get_next_date(start_dt, tz, days=7):
-    start_dt = start_dt.astimezone(tz)
+def get_next_date(start, tz, days):
+    """
+    Helper function to get desired next date
+    while handling changeover due to daylight savings time (DST).
+    :param start: starting date
+    :param tz: timezone to localize in
+    :param days: number of days to advance for desired date
+    :return: date which is specified number of days in the future
+    """
+    start = start.astimezone(tz)
 
-    next_dt = start_dt + datetime.timedelta(days=days)
-    next_dt = next_dt.astimezone(tz)
+    next = start + datetime.timedelta(days=days)
+    next = next.astimezone(tz)
 
-    dst_offset_diff = start_dt.dst() - next_dt.dst()
+    dst_offset_diff = start.dst() - next.dst()
 
-    next_dt = next_dt + dst_offset_diff
-    next_dt = next_dt.astimezone(tz)
+    next = next + dst_offset_diff
+    next = next.astimezone(tz)
 
-    return next_dt
+    return next
 
 
 def get_daily(df, pred_df, now=None):
     """
-    Get daily focused dataframe
-    Args:
-        df: full dataframe
-        now: day to focus on
-
-    Returns:
-        Day-focused dataframe
-
+    Selects subset of historical and prediction dataframes for specified date
+    :param df: subset of historical data
+    :param pred_df: subset of prediction data
+    :param now: current time
+    :return: historical data subset, prediction data subset, datetime for beginning of today,
+             datetime for end of today
     """
     if now is None:
         now = datetime.datetime.now()
@@ -96,13 +102,12 @@ def get_daily(df, pred_df, now=None):
 
 def get_weekly(df, pred_df, now=None):
     """
-    Get weekly averaged dataframe
-    Args:
-        df: full dataframe
-        now: day to focus on
-
-    Returns:
-        Weekly averaged dataframe
+    Selects subset of historical and prediction dataframes for specified week
+    :param df: subset of historical data
+    :param pred_df: subset of prediction data
+    :param now: current time
+    :return: historical data subset, prediction data subset, datetime for beginning of the week,
+             datetime for end of the week
     """
     if now is None:
         now = datetime.datetime.now()
