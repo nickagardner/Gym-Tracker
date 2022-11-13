@@ -48,6 +48,7 @@ def query_db():
                             FACILITY_COUNT_NAMES[1]: prediction[FACILITY_COUNT_NAMES[1]],
                             FACILITY_COUNT_NAMES[2]: prediction[FACILITY_COUNT_NAMES[2]]})
     pred_df['date'] = pred_df['date'].dt.tz_convert(TIMEZONE)
+    print(pred_df)
 
     return df, pred_df
 
