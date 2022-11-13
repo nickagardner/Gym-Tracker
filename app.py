@@ -80,9 +80,9 @@ def update_graph(view, now):
     if len(pred_df_subset) > 0:
         for col_idx, column in enumerate(df_subset.columns[1:]):
             try:
-                last_val = df_subset.tail(1)
+                last_val = df_subset.tail(1).reset_index(drop=True)
                 print(last_val)
-                pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.date]
+                pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.date].reset_index(drop=True)
                 final_df = pd.concat([last_val, pred_df_temp])
                 print(final_df)
             except Exception as e:
