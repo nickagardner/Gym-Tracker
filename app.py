@@ -78,14 +78,13 @@ def update_graph(view, now):
                                  line=dict(color=VALUE_COLORS[col_idx])))
 
     if len(pred_df_subset) > 0:
-        print(pred_df_subset)
         for col_idx, column in enumerate(df_subset.columns[1:]):
             try:
                 last_val = df_subset.iloc[-1]
+                print(last_val)
                 pred_df_temp = pred_df_subset[pred_df_subset['date'] > last_val.date]
                 print(pred_df_temp)
                 final_df = pd.concat([last_val, pred_df_temp])
-                print(final_df)
             except:
                 # no historical datapoint to connect to
                 final_df = pred_df_subset
