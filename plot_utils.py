@@ -70,9 +70,9 @@ def get_daily(df, pred_df, now=None):
     today_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=now.year,
                                month=now.month, day=now.day)
 
-    tomorrow_date = now + datetime.timedelta(days=1, hours=1, minutes=1)
+    tomorrow_date = now + datetime.timedelta(days=1)
     tomorrow_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=tomorrow_date.year,
-                                  month=tomorrow_date.month, day=tomorrow_date.day, hour=0, minute=5)
+                                  month=tomorrow_date.month, day=tomorrow_date.day, minute=5)
 
     df_daily = df[(df['date'] >= today_begin) & (df['date'] <= tomorrow_begin)]
     pred_df_daily = pred_df[(pred_df['date'] >= now) & (pred_df['date'] <= tomorrow_begin)]
@@ -98,9 +98,9 @@ def get_weekly(df, pred_df, now=None):
     monday = now - datetime.timedelta(days=now.weekday())
     week_begin = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=monday.year,
                               month=monday.month, day=monday.day)
-    next_monday = monday + datetime.timedelta(days=7, hours=1, minutes=1)
+    next_monday = monday + datetime.timedelta(days=7)
     week_end = pd.Timestamp(tz=pytz.timezone(TIMEZONE), year=next_monday.year,
-                            month=next_monday.month, day=next_monday.day, hour=0, minute=5)
+                            month=next_monday.month, day=next_monday.day, minute=5)
     df_weekly = df[(df['date'] >= week_begin) & (df['date'] <= week_end)]
     pred_df_weekly = pred_df[(pred_df['date'] >= week_begin) & (pred_df['date'] <= week_end)]
     df_weekly = df_weekly.set_index('date').resample('12h').mean(numeric_only=True).reset_index()
