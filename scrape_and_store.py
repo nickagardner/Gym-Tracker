@@ -59,11 +59,11 @@ def store_counts(counts):
     })
 
     facility_counts = []
-    for facility in FORMAT_VALUE_NAMES:
+    for idx, facility in enumerate(FORMAT_VALUE_NAMES):
         facility = "_".join(facility.lower().split(" "))
 
         facility_count = collection.document(facility).get().to_dict()['entries']
-        facility_count.append(counts[0])
+        facility_count.append(counts[idx])
         collection.document(facility).update({
             'entries': facility_count
         })
