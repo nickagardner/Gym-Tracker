@@ -121,6 +121,7 @@ def predict(df, now=None):
         if idx == 0:
             pred_df['ds'] = forecast['ds']
         pred_df[facility] = forecast[facility]
+        pred_df[facility] = pred_df[facility].clip(lower=0)
 
     pred_df = pred_df.rename(columns={'ds': 'date'})
     pred_df['date'] = pd.to_datetime(pred_df.date).dt.tz_localize('EST').dt.tz_convert(TIMEZONE)
