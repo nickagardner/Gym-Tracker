@@ -7,4 +7,6 @@ System to scrape data from RIT's gym website and store that data in a Firebase N
 # TODO
 
 - Add capability to expand historical data tracking past the size of one document (which is approximately 850 days worth)
+- Create monthly/yearly views
+- Set ymin to zero and ymax to maximum recorded value. Will allow for more meaningful visual comparison between weeks and days if all plots are on the same y scale
 
